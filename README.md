@@ -8,8 +8,6 @@ independently cross-validated in both `.m`/`ode45` and native Simulink
 block-diagram form, then extended with auto-generated, independently
 verified embedded C via Simulink Coder + Embedded Coder.
 
-Built as a portfolio project targeting embedded/GNC roles at small-satellite
-and launch-vehicle startups (e.g. Agnikul, Skyroot, Pixxel, Dhruva Space).
 
 ## Why this project
 
