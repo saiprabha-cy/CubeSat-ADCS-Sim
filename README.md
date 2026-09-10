@@ -5,8 +5,11 @@ Determination and Control Subsystem): rigid-body attitude dynamics,
 quaternion kinematics, B-dot magnetic detumbling, reaction-wheel pointing
 control, and disturbance rejection against real gravity-gradient torque —
 independently cross-validated in both `.m`/`ode45` and native Simulink
-block-diagram form.
+block-diagram form, then extended with auto-generated, independently
+verified embedded C via Simulink Coder + Embedded Coder.
 
+Built as a portfolio project targeting embedded/GNC roles at small-satellite
+and launch-vehicle startups (e.g. Agnikul, Skyroot, Pixxel, Dhruva Space).
 
 ## Why this project
 
@@ -28,6 +31,7 @@ and documents every debugging decision along the way.
 | Disturbance rejection (PD) | `sim/main_disturbance_rejection.m` | Real gravity-gradient torque, 0.0009° steady-state offset (matches hand-derived estimate) |
 | Disturbance rejection (PID) | `sim/main_disturbance_rejection_pid.m` | 0.0007° stable bounded residual — see note on periodic vs. DC disturbances below |
 | Simulink cross-validation | `simulink/adcs_full_loop.slx` | Independent block-diagram implementation of the pointing loop, reproduces the `.m` result |
+| Auto-generated embedded C | `codegen/` | Embedded Coder-generated C, run standalone (no MATLAB/Simulink) via a hand-written test harness — matches Simulink output to 6 significant figures |
 
 ## Key engineering findings (not just "it worked")
 
@@ -58,6 +62,16 @@ diagram, but produced a persistent limit-cycle failure mode nearly
 identical to finding #1. Fixed by rewiring each port individually and
 verifying source-by-source rather than re-inspecting the whole diagram at once.
 
+**4. Root Inport zero-default + continuous-time incompatibility (code
+generation stage).** Preparing the model for embedded C generation
+surfaced two further issues: a Root Inport with nothing externally
+driving it silently defaults to zero, producing a plausible-looking but
+meaningless constant output; and continuous-time Integrator blocks are
+incompatible with standard embedded code generation, requiring a
+switch to discrete-time integration — verified numerically (not
+assumed) to introduce no meaningful drift before trusting the result.
+See `codegen/model_config/codegen_config_notes.md` for the full trail.
+
 ## Folder structure
 
 ```
@@ -70,6 +84,7 @@ cubesat-adcs-sim/
 │   ├── control/             B-dot, PD, and full PID attitude control laws
 │   └── utils/               quaternion operations, plotting helpers
 ├── simulink/                block-diagram cross-validation + build guide
+├── codegen/                 auto-generated embedded C, standalone test harness, verification
 ├── sim/                     run scripts (one per validation stage)
 ├── results/figures/         generated plots
 └── tests/                   quaternion unit tests
@@ -96,6 +111,10 @@ main_disturbance_rejection_pid     % gravity-gradient, full PID
 
 Each script prints a numeric summary to console and saves a plot to
 `results/figures/`.
+
+For the Simulink cross-validation and auto-generated C, see
+`simulink/SIMULINK_BUILD_GUIDE.md` and `codegen/README.md` respectively —
+both are self-contained build/reproduction guides.
 
 ## Simplifications (documented, not hidden)
 
