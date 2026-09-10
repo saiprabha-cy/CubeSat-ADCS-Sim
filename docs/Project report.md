@@ -1,6 +1,6 @@
 # Project Report: CubeSat 6-DOF Attitude Dynamics & Control Simulator
 
-**Author:** Saiprabha C Y ·  **Tools:** MATLAB, Simulink
+**Author:** Saiprabha C Y · **Tools:** MATLAB, Simulink
 
 ---
 
@@ -75,6 +75,20 @@ initial solver-tolerance hypothesis was directly tested and ruled out
 documented as an honest unresolved item rather than a false resolution —
 see `docs/03_results_analysis.md` §6.
 
+### 4.6 Auto-generated embedded C
+The validated pointing-loop model was reconfigured for Embedded Coder
+(fixed-step discrete solver, Root Inport/Outport interface) and compiled
+to standalone C via Simulink Coder. A hand-written C test harness — no
+MATLAB or Simulink involved — drove the generated code through the
+identical 45° slew scenario, and the output matched the Simulink baseline
+to **6 significant figures** (`err_deg`: 0.491000 vs. 0.491010, max
+absolute difference across all signals `< 5×10⁻⁵`). Two further real
+issues were found and fixed along the way: a Root Inport left undriven
+during interactive testing silently defaults to zero rather than erroring,
+and continuous-time integration is incompatible with standard embedded
+codegen, requiring (and numerically verifying) a switch to discrete-time
+integration. Full detail in `codegen/`.
+
 ## 5. Notable engineering findings
 
 This project's debugging record is treated as a first-class deliverable,
@@ -94,6 +108,12 @@ not an afterthought:
    platform-specific instance of essentially the same bug *class* as
    finding #1, diagnosed using the same reasoning after ruling out every
    block's internal code individually.
+4. **Code-generation-stage issues** — a Root Inport left undriven
+   silently defaults to zero rather than erroring (producing a
+   plausible-looking but meaningless constant output), and continuous-time
+   integration is fundamentally incompatible with standard embedded code
+   generation. Both required real engineering decisions, not just settings
+   toggles, and both were numerically verified rather than assumed correct.
 
 Full diagnostic trails for all three are in `docs/02_design_decisions.md`
 and `docs/03_results_analysis.md`.
